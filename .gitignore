@@ -1,0 +1,15 @@
+*.lab
+*.sh
+*.svg
+*.csv
+*.pdf
+*.zip
+*.png
+*.numbers
+*.pkl
+/.idea
+/.ipynb_checkpoints
+*/__pycache__
+*.DS_Store
+/data/lab_files/.idea
+/finished_bash_scripts

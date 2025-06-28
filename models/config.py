@@ -1,0 +1,8 @@
+
+
+
+
+NUM_FRETS = 25
+
+NUM_STRINGS = 6
+PITCH_CLASSES = 12
