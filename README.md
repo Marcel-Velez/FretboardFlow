@@ -8,8 +8,8 @@ It introduces:
 
 This repository contains dataset utilities, model implementations, and training scripts.
 
-it also contains a python implementation of the 2014 "(Kernel additive modeling for interference reduction in
-multi-channel music recordings)[https://inria.hal.science/hal-01116686v2/document]" by Thomas Prätzlich, Rachel Bittner, Antoine Liutkus, Meinard Müller
+it also contains a python implementation of the 2014 "[Kernel additive modeling for interference reduction in
+multi-channel music recordings](https://inria.hal.science/hal-01116686v2/document)" by Thomas Prätzlich, Rachel Bittner, Antoine Liutkus, Meinard Müller
 
 ---
 
