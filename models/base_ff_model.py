@@ -6,11 +6,9 @@ from typing import List, Tuple, Dict
 import torch.nn.functional as F
 import numpy as np
 
-# Suppose we have all these from your snippet:
 from .metrics import GuitarMetrics
 from .anatomical import anatomical_score, string_centroid, ratio_muted_strings, ratio_open_strings
-from .losses import pitch_class_loss, fret_boundary_loss, brier_score_per_string  # Example placeholders
-# ... etc.
+from .losses import pitch_class_loss, fret_boundary_loss, brier_score_per_string  
 
 from .config import NUM_FRETS, NUM_STRINGS
 
@@ -41,8 +39,6 @@ class BaseGuitarTrainer(pl.LightningModule):
         self.mseloss = mseloss
 
         self.dhooge = False
-        # Example final FC layer: your derived classes might create their own or override
-        # but let's define a standard one for output shape (batch, 6, NUM_FRETS)
 
         # For quick metric computations
         from torchmetrics import Accuracy, Precision, Recall, F1Score
@@ -52,11 +48,6 @@ class BaseGuitarTrainer(pl.LightningModule):
         self.f1 = F1Score(task="binary")
 
     def forward(self, chords_history, frets_prev_one_hot):
-        """
-        This is the model forward pass.
-        MUST be overridden by child classes (LSTM, GRU, etc.).
-        Should return a Tensor of shape: (batch, 6, NUM_FRETS).
-        """
         raise NotImplementedError("Please implement forward(...) in the child class.")
 
     def training_step(self, batch, batch_idx):
@@ -118,9 +109,6 @@ class BaseGuitarTrainer(pl.LightningModule):
         tab_metrics = self.compute_batch_tablature_metrics(output, ohe_frets_target)
         playability_score = self.compute_batch_playability(predicted_frets)
 
-        # Possibly do transition cost & other advanced metrics
-        # (some are omitted for brevity)
-
         probs = F.softmax(output, dim=-1)  # softmax over frets per string
 
         log_softmax = nn.LogSoftmax(dim=-1)
@@ -150,7 +138,7 @@ class BaseGuitarTrainer(pl.LightningModule):
         self.log_dict(pitch_metrics, prog_bar=True, on_epoch=True)
         self.log_dict(tab_metrics, prog_bar=True, on_epoch=True)
         self.log("val_unplayability", playability_score, prog_bar=True, on_epoch=True)
-        prev_frets = torch.argmax(ohe_frets_history, dim=-1)  # e.g. shape (batch_size, n_strings)
+        prev_frets = torch.argmax(ohe_frets_history, dim=-1) 
 
         return loss
 
@@ -185,8 +173,6 @@ class BaseGuitarTrainer(pl.LightningModule):
         self.log("test_nll_loss", nll_loss, prog_bar=True, on_epoch=True)
         self.log("test_mse_loss", mse_loss, prog_bar=True, on_epoch=True)
 
-
-
         pitch_metrics = self.compute_batch_pitch_metrics(predicted_frets, integer_frets_target, addition='test_')
         tab_metrics = self.compute_batch_tablature_metrics(output, ohe_frets_target, addition='test_')
         playability_score = self.compute_batch_playability(predicted_frets)
@@ -197,33 +183,25 @@ class BaseGuitarTrainer(pl.LightningModule):
         ratio_mute = self.compute_batch_ratio_muted(predicted_frets)
         ratio_open = self.compute_batch_ratio_open_strings(predicted_frets)
         unique_pc = self.compute_batch_ratio_unique_notes(predicted_frets)
-        # print(f"{predicted_frets.shape=}{prev_frets.shape=} {unique_pc.shape=}")
-        # print(f"{prev_frets[:, :, -1].squeeze().shape=} \n\n\n")
 
         fret_centroid_new = self.compute_batch_fret_centroid(predicted_frets)
         centroid_new = self.compute_batch_string_centroid(predicted_frets)
 
         if len(prev_frets[:,:,-1].squeeze().shape) == 1:
-            # print('asdfkjalsd;jfk')
             fret_centroid_prev = self.compute_batch_fret_centroid(prev_frets.squeeze())
-            centroid_prev = self.compute_batch_string_centroid(prev_frets.squeeze())  # update not to take
+            centroid_prev = self.compute_batch_string_centroid(prev_frets.squeeze()) 
             unique_prev_pc = self.compute_batch_ratio_unique_notes(prev_frets.squeeze())
         else:
-            # print('helllooo')
             fret_centroid_prev = self.compute_batch_fret_centroid(prev_frets[:,:,-1].squeeze())
-            centroid_prev = self.compute_batch_string_centroid(prev_frets[:, :, -1].squeeze())  # update not to take
+            centroid_prev = self.compute_batch_string_centroid(prev_frets[:, :, -1].squeeze())  
             unique_prev_pc = self.compute_batch_ratio_unique_notes(prev_frets[:,:,-1].squeeze())
 
-        # print(unique_prev_pc)
-        #
-        # exit()
         centroid =  [abs(centroid_new[i] - centroid_prev[i]) for i in range(output.shape[0])]
         unique_pc =[abs(unique_pc[i] - unique_prev_pc[i]) for i in range(output.shape[0])]
         unique_pc = torch.Tensor(unique_pc).mean()
 
         centroid = torch.Tensor(centroid).mean()
         fret_centroid = torch.Tensor([abs(fret_centroid_new[i] - fret_centroid_prev[i]) for i in range(output.shape[0]) if fret_centroid_new[i] != -1]).mean()
-
 
 
         acc = self.acc(output, ohe_frets_target)
@@ -260,9 +238,6 @@ class BaseGuitarTrainer(pl.LightningModule):
         """
         return optim.Adam(self.parameters(), lr=self.learning_rate)
 
-    # -----------------------------
-    # Example: your loss function
-    # -----------------------------
     def compute_loss(self, output, fret_targets, uncertainty_mask, last_chord_textual):
         """
         Example combined cross-entropy + distance loss.
@@ -288,13 +263,10 @@ class BaseGuitarTrainer(pl.LightningModule):
             loss_fn = nn.MSELoss(reduction='mean')
             loss = loss_fn(output_probs, fret_targets)
         else:
-            # loss += F.binary_cross_entropy(torch.sigmoid(output), fret_targets)
-
             loss = 0
             for s in range(6):
                     loss += F.cross_entropy(output[:, s, :], frets_target_indices[:, s])
             loss = loss / 6.0
-            # print(loss, dummy_loss)
 
         if self.distance_loss != 0.0:
             # Add distance penalty
@@ -304,7 +276,6 @@ class BaseGuitarTrainer(pl.LightningModule):
             loss += (self.distance_loss * distance_loss)
 
         if self.multi_fret_loss != 0.0:
-            # Suppose output_probs is shape (batch, 6, 25) after sigmoid
             multi_fret_penalty = 0
             for s in range(6):
                 sum_for_string = output_probs[:, s, :].sum(dim=-1)  # shape (batch,)
@@ -318,9 +289,6 @@ class BaseGuitarTrainer(pl.LightningModule):
 
         return loss
 
-    # -----------------------------
-    # Example Batching Helpers
-    # -----------------------------
     def compute_batch_pitch_metrics(self, batch_preds, batch_targets, addition=''):
         """Batch processing for pitch metrics (PP, RP, F1P)."""
         PP, RP, F1P = [], [], []
@@ -342,9 +310,6 @@ class BaseGuitarTrainer(pl.LightningModule):
         return {addition+"PSF": np.mean(PSF), addition+"RSF": np.mean(RSF), addition+"F1SF": np.mean(F1SF)}
 
     def compute_batch_playability(self, batch_preds):
-        """
-        Example for computing a playability metric in batch.
-        """
         scores = []
         for chord in batch_preds:
             # Convert to your textual diagram, then compute anatomical_score or similar
@@ -444,15 +409,12 @@ class BaseGuitarTrainer(pl.LightningModule):
         a2 = self.finger_movement(fingering1, fingering2)
         return 1 / (1 + (theta1 * a1) + (theta2 * a2))
 
-
-
-
+    
     def compute_batch_ratio_open_strings(self, predicted_frets):
         """
         predicted_frets: (batch_size, n_strings)
         Return: average of the chord-level anatomical_score across the batch.
         """
-
         scores = []
         bs = predicted_frets.shape[0]
         for i in range(bs):
@@ -468,17 +430,9 @@ class BaseGuitarTrainer(pl.LightningModule):
         Return: average of the chord-level anatomical_score across the batch.
         """
         scores = []
-        # print(f"{predicted_frets.shape=}")
         bs = predicted_frets.shape[0]
         for i in range(bs):
-            try:
-                chord_list = self.convert_to_dhooge_diagram(predicted_frets[i])  # e.g. [0, 2, -1, 3, 0, -1]
-            except:
-                print(predicted_frets[i,:])
-                print(i)
-                print(predicted_frets)
-                exit()
-            # print(chord_list)
+            chord_list = self.convert_to_dhooge_diagram(predicted_frets[i])
             score = string_centroid(chord_list)
             scores.append(score)
         return torch.tensor(scores, device=predicted_frets.device)
@@ -491,7 +445,7 @@ class BaseGuitarTrainer(pl.LightningModule):
         scores = []
         bs = predicted_frets.shape[0]
         for i in range(bs):
-            chord_list = predicted_frets[i].tolist()  # e.g. [0, 2, -1, 3, 0, -1]
+            chord_list = predicted_frets[i].tolist() 
             score = self.metrics.ratio_unique_notes_pc(chord_list)
             scores.append(score)
         return torch.tensor(scores, device=predicted_frets.device)
@@ -505,7 +459,7 @@ class BaseGuitarTrainer(pl.LightningModule):
         scores = []
         bs = predicted_frets.shape[0]
         for i in range(bs):
-            chord_list = self.convert_to_dhooge_diagram(predicted_frets[i])  # e.g. [0, 2, -1, 3, 0, -1]
+            chord_list = self.convert_to_dhooge_diagram(predicted_frets[i])
             played_strings, fret_tot = NUM_STRINGS, 0
             for string in chord_list.split('.'):
                 if string == 'x':

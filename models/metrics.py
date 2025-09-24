@@ -152,7 +152,7 @@ class GuitarMetrics:
         wrist_move = abs(i1 - i2)
 
         # 2) "Finger movement" = sum of absolute fret differences
-        #    for each *non-muted* string in both chords.
+        #    for each non-muted string in both chords.
         finger_move = 0
         for f1, f2 in zip(diagram1, diagram2):
             if (f1 >= 0) and (f2 >= 0):  # both played (open or fretted)
@@ -177,7 +177,6 @@ class GuitarMetrics:
         (fret == 0). "Played" = not muted (fret >= 0).
         """
         num_open = sum(1 for f in diagram if f == open_string_id)
-        # strings_played = total non-muted
         strings_played = sum(1 for f in diagram if f >= open_string_id)
 
         if strings_played == 0:
