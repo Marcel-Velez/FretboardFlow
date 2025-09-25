@@ -74,6 +74,15 @@ Arguments:
 * Captured with a **hexaphonic pickup** to track string–fret positions precisely.
 * Balanced fretboard coverage (up to the 10th fret).
 
+All versions of our dataset are in the "data/midi" directory with the following convention "111_v2_2_eight_miles_high_A.mid" where:
+* "111" is the McGill Billboard song id
+* "v2" means the 2nd version of said song (each song has 1-5 versions)
+* "2" is the A -string, (1:E 2:A 3:D 4:G 5:B 6:e)
+* "eight_miles_high" is the song title
+* and "A" is the A the first guitar expert (there were 4 guitar experts so far, thus ranging from A-D)
+
+we will also upload the audio recordings, we quantized to have 4 chords per bar so our midis are not milisecond acurate transcriptions
+
 ---
 
 ## Citation
